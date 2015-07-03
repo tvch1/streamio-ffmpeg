@@ -35,15 +35,20 @@ module FFMPEG
       transcode_movie(&block)
       if @transcoder_options[:validate]
         validate_output_file(&block)
-        return encoded
+        return (creating_thumbnails? ? true : encoded)
       else
         return nil
       end
     end
 
     def encoding_succeeded?
-      @errors << "no output file created" and return false unless File.exists?(@output_file)
-      @errors << "encoded file is invalid" and return false unless encoded.valid?
+      paths = thumbnails_paths || Array[@output_file]
+      paths.each do |path|
+        @errors << "no output file created" and return false unless File.exists?(path)
+      end
+      unless creating_thumbnails?
+        @errors << "encoded file is invalid" and return false unless encoded.valid?
+      end
       true
     end
 
@@ -52,6 +57,16 @@ module FFMPEG
     end
 
     private
+
+    def creating_thumbnails?
+      @raw_options[:thumbnails]
+    end
+
+    def thumbnails_paths
+      count = @raw_options[:thumbnails].try(:[], :count)
+      paths = (1..count).map{|i| @output_file % i} if count
+    end
+
     # frame= 4855 fps= 46 q=31.0 size=   45306kB time=00:02:42.28 bitrate=2287.0kbits/
     def transcode_movie
       priority      = @transcoder_options.try(:[], :priority) || 0
