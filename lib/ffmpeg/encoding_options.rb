@@ -135,6 +135,17 @@ module FFMPEG
       value ? "-vframes 1 -f image2" : ""
     end
 
+    def convert_thumbnails(value)
+      if value
+        spf = @movie.duration.to_f / value[:count].to_i
+
+        "".tap do |output|
+          output << convert_seek_time(spf/2) << ' '
+          output << convert_filters({fix_pixels: true, fps: 1.0/spf, scale_with_pad: value[:resolution]})
+        end
+      end
+    end
+
     def convert_x264_vprofile(value)
       "-vprofile #{value}"
     end
@@ -193,11 +204,11 @@ module FFMPEG
         send("filter_#{key}", value) if value && supports_filter_option?(key)
       end
 
-      "-vf '#{params.compact.join(',')}'"
+      "-vf #{params.compact.join(',')}"
     end
 
     def filter_height_divisible(value)
-      value ? 'scale=trunc(iw/2)*2:trunc(ih/2)*2' : ''
+      value ? "scale='trunc(iw/2)*2':'trunc(ih/2)*2'" : ''
     end
 
     def filter_fix_pixels(value)
@@ -215,6 +226,12 @@ module FFMPEG
 
     def filter_fps(value)
       value ? "fps=#{value}" : ''
+    end
+
+    def filter_scale_with_pad(value)
+      width, height = value.split('x')
+      ar = Integer(width).to_f/Integer(height)
+      value ? "scale=\"'if(gt(a,#{ar}),#{width},-1)':'if(gt(a,#{ar}),-1,#{height})',pad=w=#{width}:h=#{height}:x=(ow-iw)/2:y=(oh-ih)/2:color=black'\"" : ''
     end
 
 
