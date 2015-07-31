@@ -1,3 +1,29 @@
+# Описание
+
+Gem - говно. Но лучше пока ничегго не придумали. Самое главное он генерит exception. При ошибках ffmpeg поэтому юзаем его.
+
+Добавление новых опций надо делать в файле 
+```
+lib/ffmpeg/encoding_options.rb
+```
+добавление новой функции convert_foobar
+
+``` ruby
+ def convert_video_max_bitrate(value)
+   "-maxrate #{k_format(value)}"
+ end
+```
+
+добавлние нового фильтра то что в ffmpeg идет через -vf параметр
+
+``` ruby
+  def filter_height(value)
+      value ? "scale=#{value}*iw/ih:#{value}" : ''
+    end
+```
+
+не забываем обновить версию гема.
+
 Streamio FFMPEG
 ===============
 
